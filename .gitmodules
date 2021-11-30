@@ -1,0 +1,3 @@
+[submodule "3rd/googleapis"]
+	path = 3rd/googleapis
+	url = https://ghproxy.com/https://github.com/googleapis/googleapis
