@@ -1,0 +1,101 @@
+syntax = "proto3";
+option go_package = "pkg/pb";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+message Order {
+  string name = 1;
+  google.protobuf.Timestamp create_time = 2;
+  google.protobuf.Timestamp update_time = 3;
+}
+
+// Generated according to https://cloud.google.com/apis/design/standard_methods
+service OrderService {
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse) {
+    option (google.api.http) = {
+      get : "/v1alpha1/Orders"
+    };
+  }
+
+  rpc GetOrder(GetOrderRequest) returns (Order) {
+    option (google.api.http) = {
+      get : "/v1alpha1/{name=Orders/*}"
+    };
+  }
+
+  rpc CreateOrder(CreateOrderRequest) returns (Order) {
+    option (google.api.http) = {
+      post : "/v1alpha1/Orders"
+      body : "Order"
+    };
+  }
+
+  rpc UpdateOrder(UpdateOrderRequest) returns (Order) {
+    option (google.api.http) = {
+      patch : "/v1alpha1/{Order.name=Orders/*}"
+      body : "Order"
+    };
+  }
+
+  rpc DeleteOrder(DeleteOrderRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete : "/v1alpha1/{name=Orders/*}"
+    };
+  }
+}
+
+message ListOrdersRequest {
+  // The parent resource name, for example, "shelves/shelf1"
+  string parent = 1;
+
+  // The maximum number of items to return.
+  int32 page_size = 2;
+
+  // The next_page_token value returned from a previous List request, if any.
+  string page_token = 3;
+}
+
+message ListOrdersResponse {
+  // The field name should match the noun "Order" in the method name.
+  // There will be a maximum number of items returned based on the page_size
+  // field in the request.
+  repeated Order Orders = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no more
+  // results in the list.
+  string next_page_token = 2;
+}
+
+message GetOrderRequest {
+  // The field will contain name of the resource requested.
+  string name = 1;
+}
+
+message CreateOrderRequest {
+  // The parent resource name where the Order is to be created.
+  string parent = 1;
+
+  // The Order id to use for this Order.
+  string Order_id = 2;
+
+  // The Order resource to create.
+  // The field name should match the Noun in the method name.
+  Order Order = 3;
+}
+
+message UpdateOrderRequest {
+  // The Order resource which replaces the resource on the server.
+  Order Order = 1;
+
+  // The update mask applies to the resource. For the `FieldMask` definition,
+  // see
+  // https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#fieldmask
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteOrderRequest {
+  // The resource name of the Order to be deleted.
+  string name = 1;
+}

@@ -1,0 +1,102 @@
+syntax = "proto3";
+option go_package = "pkg/pb";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+message Wallet {
+  string name = 1;
+  google.protobuf.Timestamp create_time = 2;
+  google.protobuf.Timestamp update_time = 3;
+  uint64 balance = 4;
+}
+
+// Generated according to https://cloud.google.com/apis/design/standard_methods
+service WalletService {
+  rpc ListWallets(ListWalletsRequest) returns (ListWalletsResponse) {
+    option (google.api.http) = {
+      get : "/v1alpha1/wallets"
+    };
+  }
+
+  rpc GetWallet(GetWalletRequest) returns (Wallet) {
+    option (google.api.http) = {
+      get : "/v1alpha1/{name=wallets/*}"
+    };
+  }
+
+  rpc CreateWallet(CreateWalletRequest) returns (Wallet) {
+    option (google.api.http) = {
+      post : "/v1alpha1/wallets"
+      body : "wallet"
+    };
+  }
+
+  rpc UpdateWallet(UpdateWalletRequest) returns (Wallet) {
+    option (google.api.http) = {
+      patch : "/v1alpha1/{wallet.name=wallets/*}"
+      body : "wallet"
+    };
+  }
+
+  rpc DeleteWallet(DeleteWalletRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete : "/v1alpha1/{name=wallets/*}"
+    };
+  }
+}
+
+message ListWalletsRequest {
+  // The parent resource name, for example, "shelves/shelf1"
+  string parent = 1;
+
+  // The maximum number of items to return.
+  int32 page_size = 2;
+
+  // The next_page_token value returned from a previous List request, if any.
+  string page_token = 3;
+}
+
+message ListWalletsResponse {
+  // The field name should match the noun "wallet" in the method name.
+  // There will be a maximum number of items returned based on the page_size
+  // field in the request.
+  repeated Wallet wallets = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no more
+  // results in the list.
+  string next_page_token = 2;
+}
+
+message GetWalletRequest {
+  // The field will contain name of the resource requested.
+  string name = 1;
+}
+
+message CreateWalletRequest {
+  // The parent resource name where the wallet is to be created.
+  string parent = 1;
+
+  // The wallet id to use for this wallet.
+  string wallet_id = 2;
+
+  // The wallet resource to create.
+  // The field name should match the Noun in the method name.
+  Wallet wallet = 3;
+}
+
+message UpdateWalletRequest {
+  // The wallet resource which replaces the resource on the server.
+  Wallet wallet = 1;
+
+  // The update mask applies to the resource. For the `FieldMask` definition,
+  // see
+  // https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#fieldmask
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteWalletRequest {
+  // The resource name of the wallet to be deleted.
+  string name = 1;
+}

@@ -1,0 +1,14 @@
+version: '3.1'
+services:
+  mysql:
+    image: mysql:stable
+    ports:
+      - "3306:3306"
+  wallet:
+    build:
+      context: .
+      dockerfile: wallet.Dockerfile
+  shop:
+    build:
+      context: .
+      dockerfile: shop.Dockerfile
