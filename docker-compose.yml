@@ -1,14 +1,35 @@
 version: '3.1'
 services:
   mysql:
-    image: mysql:stable
+    image: mysql:5.7
     ports:
       - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    restart: always
   wallet:
     build:
       context: .
-      dockerfile: wallet.Dockerfile
+      dockerfile: docker/wallet.Dockerfile
+    expose:
+      - 5000
+    restart: always
   shop:
     build:
       context: .
-      dockerfile: shop.Dockerfile
+      dockerfile: docker/shop.Dockerfile
+    expose:
+      - 5000
+    restart: always
+  shop_gateway:
+    build:
+      context: .
+      dockerfile: docker/shop_gateway.Dockerfile
+    command:
+      - /gateway
+      - -grpc-server-endpoint
+      - shop:5000
+    ports:
+      - 8080:8080
+    restart: always
+

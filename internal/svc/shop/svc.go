@@ -7,7 +7,9 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type OrderService struct{}
+type OrderService struct {
+	pb.UnimplementedOrderServiceServer
+}
 
 func (o *OrderService) ListOrders(_ context.Context, _ *pb.ListOrdersRequest) (*pb.ListOrdersResponse, error) {
 	panic("not implemented") // TODO: Implement
@@ -26,9 +28,5 @@ func (o *OrderService) UpdateOrder(_ context.Context, _ *pb.UpdateOrderRequest) 
 }
 
 func (o *OrderService) DeleteOrder(_ context.Context, _ *pb.DeleteOrderRequest) (*emptypb.Empty, error) {
-	panic("not implemented") // TODO: Implement
-}
-
-func (o *OrderService) mustEmbedUnimplementedOrderServiceServer() {
 	panic("not implemented") // TODO: Implement
 }

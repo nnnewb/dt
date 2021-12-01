@@ -7,29 +7,26 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type OrderService struct {
+type WalletService struct {
+	pb.UnimplementedWalletServiceServer
 }
 
-func (o *OrderService) ListOrders(_ context.Context, _ *pb.ListOrdersRequest) (*pb.ListOrdersResponse, error) {
+func (w *WalletService) ListWallets(_ context.Context, _ *pb.ListWalletsRequest) (*pb.ListWalletsResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (o *OrderService) GetOrder(_ context.Context, _ *pb.GetOrderRequest) (*pb.Order, error) {
+func (w *WalletService) GetWallet(_ context.Context, _ *pb.GetWalletRequest) (*pb.Wallet, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (o *OrderService) CreateOrder(_ context.Context, _ *pb.CreateOrderRequest) (*pb.Order, error) {
+func (w *WalletService) CreateWallet(_ context.Context, _ *pb.CreateWalletRequest) (*pb.Wallet, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (o *OrderService) UpdateOrder(_ context.Context, _ *pb.UpdateOrderRequest) (*pb.Order, error) {
+func (w *WalletService) UpdateWallet(_ context.Context, _ *pb.UpdateWalletRequest) (*pb.Wallet, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (o *OrderService) DeleteOrder(_ context.Context, _ *pb.DeleteOrderRequest) (*emptypb.Empty, error) {
-	panic("not implemented") // TODO: Implement
-}
-
-func (o *OrderService) mustEmbedUnimplementedOrderServiceServer() {
+func (w *WalletService) DeleteWallet(_ context.Context, _ *pb.DeleteWalletRequest) (*emptypb.Empty, error) {
 	panic("not implemented") // TODO: Implement
 }
