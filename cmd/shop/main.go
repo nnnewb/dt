@@ -23,7 +23,7 @@ func main() {
 	db.AutoMigrate(&models.Order{})
 
 	s := grpc.NewServer()
-	svc := &shop.OrderService{}
+	svc := &shop.OrderService{DB: db}
 	pb.RegisterOrderServiceServer(s, svc)
 
 	lis, err := net.Listen("tcp", ":5000")
