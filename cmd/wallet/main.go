@@ -23,7 +23,7 @@ func main() {
 	db.AutoMigrate(&models.Wallet{})
 
 	s := grpc.NewServer()
-	svc := &wallet.WalletService{}
+	svc := &wallet.WalletService{DB: db}
 	pb.RegisterWalletServiceServer(s, svc)
 
 	lis, err := net.Listen("tcp", ":5000")

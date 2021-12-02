@@ -32,4 +32,13 @@ services:
     ports:
       - 8080:8080
     restart: always
-
+  wallet_gateway:
+    build: 
+      context: .
+      dockerfile: docker/wallet_gateway.Dockerfile
+    command:
+      - /gateway
+      - -grpc-server-endpoint
+      - wallet:5000
+    ports:
+      - 8081:8080
