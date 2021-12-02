@@ -3,8 +3,8 @@ package wallet
 import (
 	"context"
 	"log"
+	"path"
 	"strconv"
-	"strings"
 
 	"github.com/nnnewb/dt/pkg/models"
 	"github.com/nnnewb/dt/pkg/pb"
@@ -53,9 +53,10 @@ func (w *WalletService) ListWallets(ctx context.Context, req *pb.ListWalletsRequ
 }
 
 func (w *WalletService) GetWallet(ctx context.Context, req *pb.GetWalletRequest) (*pb.Wallet, error) {
+	id := path.Base(req.GetName())
 	session := w.DB.Session(&gorm.Session{Context: ctx})
 	wallet := &models.Wallet{}
-	result := session.Where("name=?", req.GetName()).Take(wallet)
+	result := session.Take(wallet, &models.Wallet{Name: id})
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "wallet not found")
@@ -99,23 +100,18 @@ func (w *WalletService) CreateWallet(ctx context.Context, req *pb.CreateWalletRe
 }
 
 func (w *WalletService) UpdateWallet(ctx context.Context, req *pb.UpdateWalletRequest) (*pb.Wallet, error) {
-	parts := strings.Split(req.GetWallet().GetName(), "/")
-	if len(parts) < 2 {
-		log.Printf("wallet not found, name %s", req.GetWallet().GetName())
-		return nil, status.Error(codes.NotFound, "wallet not found")
-	}
-
+	id := path.Base(req.GetWallet().GetName())
 	m := &models.Wallet{}
 	session := w.DB.Session(&gorm.Session{Context: ctx})
 	err := session.Transaction(func(tx *gorm.DB) error {
 		result := session.
-			Where(&models.Wallet{Name: parts[len(parts)-1]}).
+			Where(&models.Wallet{Name: id}).
 			Updates(&models.Wallet{Balance: int64(req.GetWallet().GetBalance())})
 		if result.Error != nil {
 			return result.Error
 		}
 
-		result = session.Take(m, &models.Wallet{Name: parts[len(parts)-1]})
+		result = session.Take(m, &models.Wallet{Name: id})
 		if result.Error != nil {
 			return result.Error
 		}
@@ -139,9 +135,10 @@ func (w *WalletService) UpdateWallet(ctx context.Context, req *pb.UpdateWalletRe
 }
 
 func (w *WalletService) DeleteWallet(ctx context.Context, req *pb.DeleteWalletRequest) (*emptypb.Empty, error) {
+	id := path.Base(req.GetName())
 	session := w.DB.Session(&gorm.Session{Context: ctx})
 
-	result := session.Delete(&models.Wallet{Name: req.GetName()})
+	result := session.Delete(&models.Wallet{Name: id})
 	if result.Error != nil {
 		log.Printf("delete wallet failed, error %v", result.Error)
 		return nil, status.Error(codes.Internal, "delete wallet failed")

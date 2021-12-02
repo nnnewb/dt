@@ -3,6 +3,7 @@ package shop
 import (
 	"context"
 	"log"
+	"path"
 	"strconv"
 
 	"github.com/nnnewb/dt/pkg/models"
@@ -51,9 +52,10 @@ func (o *OrderService) ListOrders(ctx context.Context, req *pb.ListOrdersRequest
 }
 
 func (o *OrderService) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.Order, error) {
+	id := path.Base(req.GetName())
 	session := o.DB.Session(&gorm.Session{Context: ctx})
 	order := &models.Order{}
-	result := session.Where("name=?", req.GetName()).Take(order)
+	result := session.Take(order, &models.Order{Name: id})
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "order not found")
@@ -93,9 +95,11 @@ func (o *OrderService) CreateOrder(ctx context.Context, req *pb.CreateOrderReque
 	}, nil
 }
 
-func (o *OrderService) UpdateOrder(_ context.Context, req *pb.UpdateOrderRequest) (*pb.Order, error) {
+func (o *OrderService) UpdateOrder(ctx context.Context, req *pb.UpdateOrderRequest) (*pb.Order, error) {
+	id := path.Base(req.GetOrder().GetName())
 	order := &models.Order{}
-	result := o.DB.Where("name=?", req.GetOrder().GetName()).Take(order)
+	session := o.DB.Session(&gorm.Session{Context: ctx})
+	result := session.Take(order, &models.Order{Name: id})
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, status.Error(codes.NotFound, "order not found")
@@ -115,8 +119,10 @@ func (o *OrderService) UpdateOrder(_ context.Context, req *pb.UpdateOrderRequest
 	}, nil
 }
 
-func (o *OrderService) DeleteOrder(_ context.Context, req *pb.DeleteOrderRequest) (*emptypb.Empty, error) {
-	result := o.DB.Delete(&models.Order{Name: req.GetName()})
+func (o *OrderService) DeleteOrder(ctx context.Context, req *pb.DeleteOrderRequest) (*emptypb.Empty, error) {
+	id := path.Base(req.GetName())
+	session := o.DB.Session(&gorm.Session{Context: ctx})
+	result := session.Delete(&models.Order{Name: id})
 	if result.Error != nil {
 		log.Printf("delete order failed, error %v", result.Error)
 		return nil, status.Error(codes.Internal, "delete order failed")
