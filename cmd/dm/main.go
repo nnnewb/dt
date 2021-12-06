@@ -1,38 +1,27 @@
 package main
 
 import (
-	"log"
-	"net"
-
+	"github.com/gin-gonic/gin"
 	"github.com/nnnewb/dt/internal/svc/dm"
-	"github.com/nnnewb/dt/pkg/models"
-	"github.com/nnnewb/dt/pkg/pb"
-	"google.golang.org/grpc"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 func main() {
-	dsn := "root:root@tcp(mysql:3306)/dm?charset=utf8mb4&parseTime=True&loc=Local"
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// sync table schema every time
-	db.AutoMigrate(&models.GlobalTx{}, &models.SubTx{})
-
-	s := grpc.NewServer()
-	svc := &dm.DMService{DB: db}
-	pb.RegisterDMServer(s, svc)
-
-	lis, err := net.Listen("tcp", ":5000")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = s.Serve(lis)
-	if err != nil {
-		log.Fatal(err)
-	}
+	r := gin.Default()
+	r.POST("/v1alpha1/create-global-transaction", func(c *gin.Context) {
+		req := &dm.CreateGlobalTransactionReq{}
+		c.BindJSON(req)
+	})
+	r.POST("/v1alpha1/register-local-transaction", func(c *gin.Context) {
+		req := &dm.RegisterLocalTransactionReq{}
+		c.BindJSON(req)
+	})
+	r.POST("/v1alpha1/commit-global-transaction", func(c *gin.Context) {
+		req := &dm.CommitGlobalTransactionReq{}
+		c.BindJSON(req)
+	})
+	r.POST("/v1alpha1/rollback-global-transaction", func(c *gin.Context) {
+		req := &dm.RollbackGlobalTransactionReq{}
+		c.BindJSON(req)
+	})
+	r.Run()
 }

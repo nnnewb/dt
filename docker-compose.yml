@@ -16,38 +16,25 @@ services:
     expose:
       - 5000
     restart: always
-  wallet:
+  bank1:
     build:
       context: .
-      dockerfile: docker/wallet.Dockerfile
+      dockerfile: docker/bank.Dockerfile
+    command: [ "/bank", "-bank-id", "1" ]
     expose:
       - 5000
     restart: always
-  shop:
+  bank2:
     build:
       context: .
-      dockerfile: docker/shop.Dockerfile
+      dockerfile: docker/bank.Dockerfile
+    command: [ "/bank", "-bank-id", "2" ]
     expose:
       - 5000
     restart: always
-  shop_gateway:
+  app:
     build:
       context: .
-      dockerfile: docker/shop_gateway.Dockerfile
-    command:
-      - /gateway
-      - -grpc-server-endpoint
-      - shop:5000
+      dockerfile: docker/app.Dockerfile
     ports:
       - 8080:8080
-    restart: always
-  wallet_gateway:
-    build:
-      context: .
-      dockerfile: docker/wallet_gateway.Dockerfile
-    command:
-      - /gateway
-      - -grpc-server-endpoint
-      - wallet:5000
-    ports:
-      - 8081:8080
