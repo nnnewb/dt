@@ -7,6 +7,15 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
     restart: always
+    volumes:
+      - ./scripts/initdb.d/:/docker-entrypoint-initdb.d/:ro
+  dm:
+    build:
+      context: .
+      dockerfile: docker/dm.Dockerfile
+    expose:
+      - 5000
+    restart: always
   wallet:
     build:
       context: .
@@ -33,7 +42,7 @@ services:
       - 8080:8080
     restart: always
   wallet_gateway:
-    build: 
+    build:
       context: .
       dockerfile: docker/wallet_gateway.Dockerfile
     command:
