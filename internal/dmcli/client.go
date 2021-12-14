@@ -8,11 +8,8 @@ import (
 )
 
 func GlobalTx(ctx context.Context, fn func(gid string) error) error {
-	gid, err := getOrCreateGID(ctx)
-	if err != nil {
-		return err
-	}
-
+	var gid string
+	// TODO 生成GID
 	CreateGlobalTransaction(ctx, &dm.CreateGlobalTransactionReq{GID: gid})
 
 	// 执行业务代码

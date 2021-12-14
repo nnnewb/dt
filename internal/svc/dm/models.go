@@ -1,14 +1,10 @@
 package dm
 
-import "gorm.io/gorm"
-
 type GlobalTx struct {
-	gorm.Model
-	GID string `json:"gid,omitempty"`
+	GID string `json:"gid,omitempty" db:"gid"`
 }
 
 type SubTx struct {
-	gorm.Model
-	GID      string `json:"gid,omitempty"`
-	Callback string `json:"callback,omitempty"`
+	GID      string `json:"gid,omitempty" db:"gid"`
+	Callback string `json:"callback,omitempty" db:"callback"`
 }

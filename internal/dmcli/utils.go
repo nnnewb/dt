@@ -1,7 +1,6 @@
 package dmcli
 
 import (
-	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -9,8 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"google.golang.org/grpc/metadata"
 )
 
 // GenGID 生成 gid ，格式 dm-<IP>-<时间戳哈希>
@@ -39,15 +36,4 @@ func genGID() (string, error) {
 	}
 
 	return "", errors.New("no valid net interface found for generate GID")
-}
-
-func getOrCreateGID(ctx context.Context) (string, error) {
-	var gid string
-	if md, ok := metadata.FromIncomingContext(ctx); ok && len(md.Get("dm-gid")) != 0 {
-		gid = md.Get("dm-gid")[0]
-	} else {
-		// TODO 调用 dm 的 create-global-transaction
-	}
-
-	return gid, nil
 }

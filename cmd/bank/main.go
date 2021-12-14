@@ -6,9 +6,8 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nnnewb/dt/internal/svc/bank"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 var flgBankID int
@@ -25,13 +24,12 @@ func main() {
 	}
 
 	dsn := fmt.Sprintf("root:root@tcp(mysql:3306)/bank%d?charset=utf8mb4&parseTime=True&loc=Local", flgBankID)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := sqlx.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// sync table schema every time
-	db.AutoMigrate(&bank.Wallet{})
+	println(db.Stats())
 
 	r := gin.Default()
 	r.POST("/v1alpha1/bank/:BankID/TransIn", func(c *gin.Context) {})
