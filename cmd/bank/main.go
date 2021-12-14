@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/nnnewb/dt/internal/svc/bank"
 )
 
 var flgBankID int
@@ -24,15 +25,33 @@ func main() {
 	}
 
 	dsn := fmt.Sprintf("root:root@tcp(mysql:3306)/bank%d?charset=utf8mb4&parseTime=True&loc=Local", flgBankID)
-	db, err := sqlx.Open("mysql", dsn)
+	_, err := sqlx.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	println(db.Stats())
-
 	r := gin.Default()
-	r.POST("/v1alpha1/bank/:BankID/TransIn", func(c *gin.Context) {})
-	r.POST("/v1alpha1/bank/:BankID/TransOut", func(c *gin.Context) {})
-	r.Run()
+	r.POST("/v1alpha1/bank/:BankID/TransIn", func(c *gin.Context) {
+		req := &bank.TransInReq{}
+		c.BindJSON(req)
+
+		// TODO implements this
+
+		c.JSONP(200, map[string]interface{}{
+			"code":    0,
+			"message": "ok",
+		})
+	})
+	r.POST("/v1alpha1/bank/:BankID/TransOut", func(c *gin.Context) {
+		req := &bank.TransOutReq{}
+		c.BindJSON(req)
+
+		// TODO implements this
+
+		c.JSONP(200, map[string]interface{}{
+			"code":    0,
+			"message": "ok",
+		})
+	})
+	r.Run(":5000")
 }

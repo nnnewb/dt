@@ -10,7 +10,7 @@ import (
 	"github.com/nnnewb/dt/internal/svc/dm"
 )
 
-func CreateGlobalTransaction(ctx context.Context, payload *dm.CreateGlobalTransactionReq) error {
+func CreateGlobalTransaction(ctx context.Context, payload *dm.CreateGlobalTxReq) error {
 	marshaled, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func CreateGlobalTransaction(ctx context.Context, payload *dm.CreateGlobalTransa
 	return nil
 }
 
-func RegisterLocalTransaction(ctx context.Context, gid string, payload *dm.RegisterLocalTransactionReq) error {
+func RegisterLocalTransaction(ctx context.Context, gid string, payload *dm.RegisterLocalTxReq) error {
 	marshaled, err := json.Marshal(payload)
 	if err != nil {
 		return err
