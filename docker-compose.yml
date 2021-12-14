@@ -1,5 +1,20 @@
 version: '3.1'
 services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.29
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    expose:
+      - 5775
+      - 6831
+      - 6832
+      - 5778
+      - 16686
+      - 14268
+      - 14250
+      - 9411
+    ports:
+      - 16686:16686
   mysql:
     image: mysql:5.7
     ports:

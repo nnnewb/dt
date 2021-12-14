@@ -21,3 +21,10 @@ func Build() error {
 
 	return nil
 }
+
+func Up() error {
+	if err := sh.Run("docker-compose", "up", "-d"); err != nil {
+		return err
+	}
+	return nil
+}

@@ -1,4 +1,4 @@
-package dmcli
+package dm
 
 import (
 	"encoding/hex"
@@ -11,7 +11,7 @@ import (
 )
 
 // GenGID 生成 gid ，格式 dm-<IP>-<时间戳哈希>
-func genGID() (string, error) {
+func GenGID() (string, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return "", err
@@ -36,4 +36,13 @@ func genGID() (string, error) {
 	}
 
 	return "", errors.New("no valid net interface found for generate GID")
+}
+
+// MustGenGID 生成 gid ，格式参见 GenGID ，失败则 panic
+func MustGenGID() string {
+	gid, err := GenGID()
+	if err != nil {
+		panic(err)
+	}
+	return gid
 }

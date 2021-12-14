@@ -7,7 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"path"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type BaseClient struct {
@@ -17,13 +18,15 @@ type BaseClient struct {
 
 func NewClient(baseUrl string) *BaseClient {
 	return &BaseClient{
-		BaseUrl:    baseUrl,
-		HTTPClient: &http.Client{},
+		BaseUrl: baseUrl,
+		HTTPClient: &http.Client{
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+		},
 	}
 }
 
 func (c *BaseClient) post(ctx context.Context, apiPath string, payload interface{}, response interface{}) error {
-	fullUrl := path.Join(c.BaseUrl, apiPath)
+	fullUrl := c.BaseUrl + apiPath
 	bytePayload, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -53,7 +56,7 @@ func (c *BaseClient) post(ctx context.Context, apiPath string, payload interface
 }
 
 func (c *BaseClient) get(ctx context.Context, apiPath string, query url.Values, response interface{}) error {
-	fullUrl := path.Join(c.BaseUrl, apiPath)
+	fullUrl := c.BaseUrl + apiPath
 	if query != nil {
 		url, err := url.Parse(fullUrl)
 		if err != nil {
