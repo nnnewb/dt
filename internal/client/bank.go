@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/nnnewb/dt/internal/svc/bank"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type BankClient struct {
@@ -14,8 +15,10 @@ type BankClient struct {
 func NewBankClient(baseUrl string) *BankClient {
 	return &BankClient{
 		BaseClient{
-			BaseUrl:    baseUrl,
-			HTTPClient: &http.Client{},
+			BaseUrl: baseUrl,
+			HTTPClient: &http.Client{
+				Transport: otelhttp.NewTransport(http.DefaultTransport),
+			},
 		},
 	}
 }

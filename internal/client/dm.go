@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/nnnewb/dt/internal/svc/dm"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type DMClient struct {
@@ -14,8 +15,10 @@ type DMClient struct {
 func NewDMClient(baseUrl string) *DMClient {
 	return &DMClient{
 		BaseClient{
-			BaseUrl:    baseUrl,
-			HTTPClient: &http.Client{},
+			BaseUrl: baseUrl,
+			HTTPClient: &http.Client{
+				Transport: otelhttp.NewTransport(http.DefaultTransport),
+			},
 		},
 	}
 }

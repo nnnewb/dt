@@ -7,22 +7,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type BaseClient struct {
 	BaseUrl    string
 	HTTPClient *http.Client
-}
-
-func NewClient(baseUrl string) *BaseClient {
-	return &BaseClient{
-		BaseUrl: baseUrl,
-		HTTPClient: &http.Client{
-			Transport: otelhttp.NewTransport(http.DefaultTransport),
-		},
-	}
 }
 
 func (c *BaseClient) post(ctx context.Context, apiPath string, payload interface{}, response interface{}) error {
