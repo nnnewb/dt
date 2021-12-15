@@ -10,8 +10,9 @@ type CreateGlobalTxResp struct {
 }
 
 type RegisterLocalTxReq struct {
-	GID      string `json:"gid,omitempty"`
-	BranchID string `json:"branch_id,omitempty"`
+	GID         string `json:"gid,omitempty"`
+	BranchID    string `json:"branch_id,omitempty"`
+	CallbackUrl string `json:"callback_url,omitempty"`
 }
 
 type RegisterLocalTxResp struct {

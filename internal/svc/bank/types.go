@@ -1,8 +1,9 @@
 package bank
 
 type TransInReq struct {
-	ID     int64 `json:"id,omitempty"`
-	Amount int64 `json:"amount,omitempty"`
+	GID    string `json:"gid,omitempty"`
+	ID     int64  `json:"id,omitempty"`
+	Amount int64  `json:"amount,omitempty"`
 }
 
 type TransInResp struct {
@@ -11,11 +12,21 @@ type TransInResp struct {
 }
 
 type TransOutReq struct {
-	ID     int64 `json:"id,omitempty"`
-	Amount int64 `json:"amount,omitempty"`
+	GID    string `json:"gid,omitempty"`
+	ID     int64  `json:"id,omitempty"`
+	Amount int64  `json:"amount,omitempty"`
 }
 
 type TransOutResp struct {
+	Code    int32  `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+type DMCallbackReq struct {
+	Action string `json:"action,omitempty"`
+}
+
+type DMCallbackResp struct {
 	Code    int32  `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
 }

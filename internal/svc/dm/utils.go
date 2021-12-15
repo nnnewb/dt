@@ -31,7 +31,7 @@ func GenGID() (string, error) {
 				r = append(r, byte(result))
 			}
 
-			return fmt.Sprintf("dm-%s-%d", hex.EncodeToString(r), time.Now().UnixMilli()), nil
+			return fmt.Sprintf("dm-gi-%s-%d", hex.EncodeToString(r), time.Now().UnixMilli()), nil
 		}
 	}
 
@@ -45,4 +45,39 @@ func MustGenGID() string {
 		panic(err)
 	}
 	return gid
+}
+
+func GenBranchID(branch string) (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "", err
+	}
+
+	for _, addr := range addrs {
+		// 取第一个非本地环回(127.0.0.1) 同时有 IPv4 地址的网卡接口
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
+			ip := ipnet.IP.To4().String()
+			ns := strings.Split(ip, ".")
+			r := []byte{}
+			for _, n := range ns {
+				result, err := strconv.Atoi(n)
+				if err != nil {
+					return "", err
+				}
+				r = append(r, byte(result))
+			}
+
+			return fmt.Sprintf("dm-bi-%s-%d", hex.EncodeToString(r), time.Now().UnixMilli()), nil
+		}
+	}
+
+	return "", errors.New("no valid net interface found for generate BranchID")
+}
+
+func MustGenBranchID(branch string) string {
+	bi, err := GenBranchID(branch)
+	if err != nil {
+		panic(err)
+	}
+	return bi
 }

@@ -10,8 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/nnnewb/dt/internal/client"
 	"github.com/nnnewb/dt/internal/middleware"
 	"github.com/nnnewb/dt/internal/svc/bank"
+	"github.com/nnnewb/dt/internal/svc/dm"
 	"go.opentelemetry.io/otel"
 )
 
@@ -50,6 +52,7 @@ func main() {
 
 	r := gin.Default()
 	r.Use(middleware.Jaeger(fmt.Sprintf("bank%d", flgBankID)))
+	r.Use(middleware.LogPayloadAndResponse)
 	r.POST("/v1alpha1/dm_callback", dmCallback)
 	r.POST("/v1alpha1/trans_in", transIn)
 	r.POST("/v1alpha1/trans_out", transOut)
@@ -73,6 +76,25 @@ func transIn(c *gin.Context) {
 	c.BindJSON(req)
 
 	// TODO implements this
+	cli := client.NewDMClient("http://dm:5000")
+	resp, err := cli.RegisterLocalTx(c.Request.Context(), &dm.RegisterLocalTxReq{
+		GID:         req.GID,
+		BranchID:    dm.MustGenBranchID("TransIn"),
+		CallbackUrl: fmt.Sprintf("http://bank%d:5000/v1alpha1/dm_callback", flgBankID),
+	})
+
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	if resp.Code != 0 {
+		c.JSONP(500, &bank.TransInResp{
+			Code:    -1,
+			Message: "register local tx failed",
+		})
+		return
+	}
 
 	c.JSONP(200, map[string]interface{}{
 		"code":    0,
@@ -85,6 +107,25 @@ func transOut(c *gin.Context) {
 	c.BindJSON(req)
 
 	// TODO implements this
+	cli := client.NewDMClient("http://dm:5000")
+	resp, err := cli.RegisterLocalTx(c.Request.Context(), &dm.RegisterLocalTxReq{
+		GID:         req.GID,
+		BranchID:    dm.MustGenBranchID("TransOut"),
+		CallbackUrl: fmt.Sprintf("http://bank%d:5000/v1alpha1/dm_callback", flgBankID),
+	})
+
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	if resp.Code != 0 {
+		c.JSONP(500, &bank.TransInResp{
+			Code:    -1,
+			Message: "register local tx failed",
+		})
+		return
+	}
 
 	c.JSONP(200, map[string]interface{}{
 		"code":    0,

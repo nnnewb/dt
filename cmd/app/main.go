@@ -31,6 +31,7 @@ func main() {
 
 	r := gin.Default()
 	r.Use(middleware.Jaeger("app"))
+	r.Use(middleware.LogPayloadAndResponse)
 	r.POST("/v1alpha1/transfer", transfer)
 	r.Run(":5000")
 }
@@ -56,16 +57,11 @@ func transfer(c *gin.Context) {
 	gid := dm.MustGenGID()
 	resp, err := dmcli.CreateGlobalTx(c.Request.Context(), &dm.CreateGlobalTxReq{GID: gid})
 	if err != nil {
-		log.Printf("create global tx failed, error %v", err)
-		c.JSONP(500, &GeneralResp{
-			Code:    -1,
-			Message: "create global transaction failed",
-		})
+		c.Error(err)
 		return
 	}
 
 	if resp.Code != 0 {
-		log.Printf("create global tx failed, code %d, %s", resp.Code, resp.Message)
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
 			Message: "create global transaction failed",
@@ -74,9 +70,10 @@ func transfer(c *gin.Context) {
 	}
 
 	cli1 := client.NewBankClient("http://bank1:5000")
-	transInResp, err := cli1.TransIn(c.Request.Context(), &bank.TransInReq{ID: req.ToID, Amount: req.Amount})
+	transInResp, err := cli1.TransIn(c.Request.Context(), &bank.TransInReq{GID: gid, ID: req.ToID, Amount: req.Amount})
 	if err != nil {
 		// 失败的话就等着超时
+		c.Error(err)
 		_, _ = dmcli.RollbackGlobalTx(c.Request.Context(), &dm.RollbackGlobalTxReq{GID: gid})
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
@@ -97,11 +94,11 @@ func transfer(c *gin.Context) {
 	}
 
 	cli2 := client.NewBankClient("http://bank2:5000")
-	transOutResp, err := cli2.TransIn(c.Request.Context(), &bank.TransInReq{ID: req.ToID, Amount: req.Amount})
+	transOutResp, err := cli2.TransOut(c.Request.Context(), &bank.TransOutReq{GID: gid, ID: req.ToID, Amount: req.Amount})
 	if err != nil {
 		// 失败的话就等着超时
+		c.Error(err)
 		_, _ = dmcli.RollbackGlobalTx(c.Request.Context(), &dm.RollbackGlobalTxReq{GID: gid})
-
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
 			Message: "trans out failed",
@@ -123,8 +120,8 @@ func transfer(c *gin.Context) {
 	commitResp, err := dmcli.CommitGlobalTx(c.Request.Context(), &dm.CommitGlobalTxReq{GID: gid})
 	if err != nil {
 		// 失败的话就等着超时
+		c.Error(err)
 		_, _ = dmcli.RollbackGlobalTx(c.Request.Context(), &dm.RollbackGlobalTxReq{GID: gid})
-
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
 			Message: "commit failed",
@@ -135,7 +132,6 @@ func transfer(c *gin.Context) {
 	if commitResp.Code != 0 {
 		// 失败的话就等着超时
 		_, _ = dmcli.RollbackGlobalTx(c.Request.Context(), &dm.RollbackGlobalTxReq{GID: gid})
-
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
 			Message: "commit failed",
@@ -147,5 +143,4 @@ func transfer(c *gin.Context) {
 		"code":    0,
 		"message": "ok",
 	})
-
 }

@@ -16,32 +16,7 @@ type BaseClient struct {
 
 func (c *BaseClient) post(ctx context.Context, apiPath string, payload interface{}, response interface{}) error {
 	fullUrl := c.BaseUrl + apiPath
-	bytePayload, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, fullUrl, bytes.NewBuffer(bytePayload))
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.HTTPClient.Do(request)
-	if err != nil {
-		return err
-	}
-
-	responseBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(responseBody, response)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return WrappedPost(ctx, c.HTTPClient, fullUrl, payload, response)
 }
 
 func (c *BaseClient) get(ctx context.Context, apiPath string, query url.Values, response interface{}) error {

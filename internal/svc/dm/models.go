@@ -4,7 +4,8 @@ type GlobalTx struct {
 	GID string `json:"gid,omitempty" db:"gid"`
 }
 
-type SubTx struct {
-	GID      string `json:"gid,omitempty" db:"gid"`
-	Callback string `json:"callback,omitempty" db:"callback"`
+type LocalTx struct {
+	GID         string `json:"gid,omitempty" db:"gid"`
+	BranchID    string `json:"branch_id,omitempty" db:"branch_id"`
+	CallbackUrl string `json:"callback_url,omitempty" db:"callback_url"`
 }

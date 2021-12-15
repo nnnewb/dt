@@ -1,15 +1,14 @@
 CREATE DATABASE dm;
 USE dm;
 CREATE TABLE global_tx (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    gid VARCHAR(64) NOT NULL,
+    gid VARCHAR(64) PRIMARY KEY NOT NULL,
     expire_at TIMESTAMP NOT NULL
 );
 CREATE TABLE local_tx (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    global_tx_id BIGINT NOT NULL,
+    branch_id VARCHAR(64) PRIMARY KEY NOT NULL,
+    gid VARCHAR(64) NOT NULL,
     callback_url VARCHAR(512) NOT NULL,
-    FOREIGN KEY (global_tx_id) REFERENCES global_tx(id)
+    FOREIGN KEY (gid) REFERENCES global_tx(gid)
 );
 
 CREATE DATABASE bank1;
