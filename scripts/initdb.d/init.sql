@@ -17,6 +17,7 @@ CREATE TABLE wallet (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     balance DECIMAL NOT NULL
 );
+INSERT INTO wallet(id,balance) VALUES(1,100);
 
 CREATE DATABASE bank2;
 USE bank2;
@@ -24,3 +25,4 @@ CREATE TABLE wallet (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     balance DECIMAL NOT NULL
 );
+INSERT INTO wallet(id,balance) VALUES(2,100);
