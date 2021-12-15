@@ -113,7 +113,7 @@ func commitGlobalTx(c *gin.Context) {
 	// TODO 极端情况下，回调 RM 时出现部分失败要如何处理？
 	cli := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	for _, tx := range allLocalTx {
-		callbackPayload := &bank.DMCallbackReq{Action: "commit"}
+		callbackPayload := &bank.DMCallbackReq{Action: "commit", GID: req.GID, BranchID: tx.BranchID}
 		callbackResp := bank.DMCallbackResp{}
 		err = client.WrappedPost(c.Request.Context(), cli, tx.CallbackUrl, callbackPayload, &callbackResp)
 		if err != nil {
@@ -151,7 +151,7 @@ func rollbackGlobalTx(c *gin.Context) {
 	// TODO 极端情况下，回调 RM 时出现部分失败要如何处理？
 	cli := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	for _, tx := range allLocalTx {
-		callbackPayload := &bank.DMCallbackReq{Action: "rollback"}
+		callbackPayload := &bank.DMCallbackReq{Action: "rollback", GID: req.GID, BranchID: tx.BranchID}
 		callbackResp := bank.DMCallbackResp{}
 		err = client.WrappedPost(c.Request.Context(), cli, tx.CallbackUrl, callbackPayload, &callbackResp)
 		if err != nil {

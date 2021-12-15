@@ -23,7 +23,9 @@ type TransOutResp struct {
 }
 
 type DMCallbackReq struct {
-	Action string `json:"action,omitempty"`
+	Action   string `json:"action,omitempty"`
+	GID      string `json:"gid,omitempty"`
+	BranchID string `json:"branch_id,omitempty"`
 }
 
 type DMCallbackResp struct {

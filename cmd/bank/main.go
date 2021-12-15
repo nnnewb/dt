@@ -8,12 +8,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/nnnewb/dt/internal/client"
 	"github.com/nnnewb/dt/internal/middleware"
 	"github.com/nnnewb/dt/internal/svc/bank"
 	"github.com/nnnewb/dt/internal/svc/dm"
+	"github.com/nnnewb/dt/internal/tracing/otelsql"
 	"go.opentelemetry.io/otel"
 )
 
@@ -44,14 +46,16 @@ func main() {
 		}
 	}()
 
+	otelsql.Register("otelmysql", &mysql.MySQLDriver{})
 	dsn := fmt.Sprintf("root:root@tcp(mysql:3306)/bank%d?charset=utf8mb4&parseTime=True&loc=Local", flgBankID)
-	_, err := sqlx.Open("mysql", dsn)
+	db, err := sqlx.Open("otelmysql", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	r := gin.Default()
 	r.Use(middleware.Jaeger(fmt.Sprintf("bank%d", flgBankID)))
+	r.Use(middleware.WithDatabase(db))
 	r.Use(middleware.LogPayloadAndResponse)
 	r.POST("/v1alpha1/dm_callback", dmCallback)
 	r.POST("/v1alpha1/trans_in", transIn)
@@ -60,10 +64,33 @@ func main() {
 }
 
 func dmCallback(c *gin.Context) {
-	req := &bank.TransInReq{}
+	req := &bank.DMCallbackReq{}
 	c.BindJSON(req)
+	db := c.MustGet("db").(*sqlx.DB)
 
-	// TODO implements this
+	// 业务逻辑
+	xid := fmt.Sprintf("'%s','%s'", req.GID, req.BranchID)
+	if req.Action == "commit" {
+		// 提交 XA 事务
+		_, err := db.ExecContext(c.Request.Context(), fmt.Sprintf("XA COMMIT %s", xid))
+		if err != nil {
+			c.Error(err)
+			return
+		}
+	} else if req.Action == "rollback" {
+		// 回滚 XA 事务
+		_, err := db.ExecContext(c.Request.Context(), fmt.Sprintf("XA ROLLBACK %s", xid))
+		if err != nil {
+			c.Error(err)
+			return
+		}
+	} else {
+		c.JSONP(400, &bank.DMCallbackResp{
+			Code:    1001,
+			Message: "unknown action",
+		})
+		return
+	}
 
 	c.JSONP(200, map[string]interface{}{
 		"code":    0,
@@ -74,25 +101,51 @@ func dmCallback(c *gin.Context) {
 func transIn(c *gin.Context) {
 	req := &bank.TransInReq{}
 	c.BindJSON(req)
-
-	// TODO implements this
+	db := c.MustGet("db").(*sqlx.DB)
 	cli := client.NewDMClient("http://dm:5000")
+	branchID := dm.MustGenBranchID("TransIn")
+
 	resp, err := cli.RegisterLocalTx(c.Request.Context(), &dm.RegisterLocalTxReq{
 		GID:         req.GID,
-		BranchID:    dm.MustGenBranchID("TransIn"),
+		BranchID:    branchID,
 		CallbackUrl: fmt.Sprintf("http://bank%d:5000/v1alpha1/dm_callback", flgBankID),
 	})
-
 	if err != nil {
 		c.Error(err)
 		return
 	}
-
 	if resp.Code != 0 {
 		c.JSONP(500, &bank.TransInResp{
 			Code:    -1,
 			Message: "register local tx failed",
 		})
+		return
+	}
+
+	// 业务逻辑
+	// 准备 XA 事务
+	xid := fmt.Sprintf("'%s','%s'", req.GID, branchID)
+	_, err = db.ExecContext(c.Request.Context(), fmt.Sprintf("XA BEGIN %s", xid))
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	_, err = db.ExecContext(c.Request.Context(), "UPDATE wallet SET balance=balance+? WHERE id=?", req.Amount, req.ID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	_, err = db.ExecContext(c.Request.Context(), fmt.Sprintf("XA END %s", xid))
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	_, err = db.ExecContext(c.Request.Context(), fmt.Sprintf("XA PREPARE %s", xid))
+	if err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -105,25 +158,52 @@ func transIn(c *gin.Context) {
 func transOut(c *gin.Context) {
 	req := &bank.TransOutReq{}
 	c.BindJSON(req)
-
-	// TODO implements this
+	db := c.MustGet("db").(*sqlx.DB)
 	cli := client.NewDMClient("http://dm:5000")
+	branchID := dm.MustGenBranchID("TransOut")
+
+	// 注册本地事务
 	resp, err := cli.RegisterLocalTx(c.Request.Context(), &dm.RegisterLocalTxReq{
 		GID:         req.GID,
-		BranchID:    dm.MustGenBranchID("TransOut"),
+		BranchID:    branchID,
 		CallbackUrl: fmt.Sprintf("http://bank%d:5000/v1alpha1/dm_callback", flgBankID),
 	})
-
 	if err != nil {
 		c.Error(err)
 		return
 	}
-
 	if resp.Code != 0 {
 		c.JSONP(500, &bank.TransInResp{
 			Code:    -1,
 			Message: "register local tx failed",
 		})
+		return
+	}
+
+	// 业务逻辑
+	// 准备 XA 事务
+	xid := fmt.Sprintf("'%s','%s'", req.GID, branchID)
+	_, err = db.ExecContext(c.Request.Context(), fmt.Sprintf("XA BEGIN %s", xid))
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	_, err = db.ExecContext(c.Request.Context(), "UPDATE wallet SET balance=balance-? WHERE id=?", req.Amount, req.ID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	_, err = db.ExecContext(c.Request.Context(), fmt.Sprintf("XA END %s", xid))
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	_, err = db.ExecContext(c.Request.Context(), fmt.Sprintf("XA PREPARE %s", xid))
+	if err != nil {
+		c.Error(err)
 		return
 	}
 
