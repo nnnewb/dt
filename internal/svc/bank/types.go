@@ -22,13 +22,13 @@ type TransOutResp struct {
 	Message string `json:"message,omitempty"`
 }
 
-type DMCallbackReq struct {
+type TMCallbackReq struct {
 	Action   string `json:"action,omitempty"`
 	GID      string `json:"gid,omitempty"`
 	BranchID string `json:"branch_id,omitempty"`
 }
 
-type DMCallbackResp struct {
+type TMCallbackResp struct {
 	Code    int32  `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
 }

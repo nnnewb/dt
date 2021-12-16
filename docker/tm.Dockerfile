@@ -4,8 +4,8 @@ ENV CGO_ENABLED=0
 RUN mkdir -p /src
 COPY . /src
 WORKDIR /src
-RUN go build -o /dm cmd/dm/main.go
+RUN go build -o /tm cmd/tm/main.go
 
 FROM scratch
-COPY --from=BUILDER /dm /dm
-CMD ["/dm"]
+COPY --from=BUILDER /tm /tm
+CMD ["/tm"]

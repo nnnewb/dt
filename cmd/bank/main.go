@@ -14,7 +14,7 @@ import (
 	"github.com/nnnewb/dt/internal/client"
 	"github.com/nnnewb/dt/internal/middleware"
 	"github.com/nnnewb/dt/internal/svc/bank"
-	"github.com/nnnewb/dt/internal/svc/dm"
+	"github.com/nnnewb/dt/internal/svc/tm"
 	"github.com/nnnewb/dt/internal/tracing/otelsql"
 	"go.opentelemetry.io/otel"
 )
@@ -57,14 +57,14 @@ func main() {
 	r.Use(middleware.Jaeger(fmt.Sprintf("bank%d", flgBankID)))
 	r.Use(middleware.WithDatabase(db))
 	r.Use(middleware.LogPayloadAndResponse)
-	r.POST("/v1alpha1/dm_callback", dmCallback)
+	r.POST("/v1alpha1/tm_callback", tmCallback)
 	r.POST("/v1alpha1/trans_in", transIn)
 	r.POST("/v1alpha1/trans_out", transOut)
 	r.Run(":5000")
 }
 
-func dmCallback(c *gin.Context) {
-	req := &bank.DMCallbackReq{}
+func tmCallback(c *gin.Context) {
+	req := &bank.TMCallbackReq{}
 	c.BindJSON(req)
 	db := c.MustGet("db").(*sqlx.DB)
 
@@ -85,7 +85,7 @@ func dmCallback(c *gin.Context) {
 			return
 		}
 	} else {
-		c.JSONP(400, &bank.DMCallbackResp{
+		c.JSONP(400, &bank.TMCallbackResp{
 			Code:    1001,
 			Message: "unknown action",
 		})
@@ -102,13 +102,13 @@ func transIn(c *gin.Context) {
 	req := &bank.TransInReq{}
 	c.BindJSON(req)
 	db := c.MustGet("db").(*sqlx.DB)
-	cli := client.NewDMClient("http://dm:5000")
-	branchID := dm.MustGenBranchID("TransIn")
+	cli := client.NewTMClient("http://tm:5000")
+	branchID := tm.MustGenBranchID("TransIn")
 
-	resp, err := cli.RegisterLocalTx(c.Request.Context(), &dm.RegisterLocalTxReq{
+	resp, err := cli.RegisterLocalTx(c.Request.Context(), &tm.RegisterLocalTxReq{
 		GID:         req.GID,
 		BranchID:    branchID,
-		CallbackUrl: fmt.Sprintf("http://bank%d:5000/v1alpha1/dm_callback", flgBankID),
+		CallbackUrl: fmt.Sprintf("http://bank%d:5000/v1alpha1/tm_callback", flgBankID),
 	})
 	if err != nil {
 		c.Error(err)
@@ -159,14 +159,14 @@ func transOut(c *gin.Context) {
 	req := &bank.TransOutReq{}
 	c.BindJSON(req)
 	db := c.MustGet("db").(*sqlx.DB)
-	cli := client.NewDMClient("http://dm:5000")
-	branchID := dm.MustGenBranchID("TransOut")
+	cli := client.NewTMClient("http://tm:5000")
+	branchID := tm.MustGenBranchID("TransOut")
 
 	// 注册本地事务
-	resp, err := cli.RegisterLocalTx(c.Request.Context(), &dm.RegisterLocalTxReq{
+	resp, err := cli.RegisterLocalTx(c.Request.Context(), &tm.RegisterLocalTxReq{
 		GID:         req.GID,
 		BranchID:    branchID,
-		CallbackUrl: fmt.Sprintf("http://bank%d:5000/v1alpha1/dm_callback", flgBankID),
+		CallbackUrl: fmt.Sprintf("http://bank%d:5000/v1alpha1/tm_callback", flgBankID),
 	})
 	if err != nil {
 		c.Error(err)

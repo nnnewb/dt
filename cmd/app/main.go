@@ -10,7 +10,7 @@ import (
 	"github.com/nnnewb/dt/internal/client"
 	"github.com/nnnewb/dt/internal/middleware"
 	"github.com/nnnewb/dt/internal/svc/bank"
-	"github.com/nnnewb/dt/internal/svc/dm"
+	"github.com/nnnewb/dt/internal/svc/tm"
 	"go.opentelemetry.io/otel"
 )
 
@@ -53,9 +53,9 @@ func transfer(c *gin.Context) {
 	req := &TransferReq{}
 	c.BindJSON(req)
 
-	dmcli := client.NewDMClient("http://dm:5000")
-	gid := dm.MustGenGID()
-	resp, err := dmcli.CreateGlobalTx(c.Request.Context(), &dm.CreateGlobalTxReq{GID: gid})
+	tmcli := client.NewTMClient("http://tm:5000")
+	gid := tm.MustGenGID()
+	resp, err := tmcli.CreateGlobalTx(c.Request.Context(), &tm.CreateGlobalTxReq{GID: gid})
 	if err != nil {
 		c.Error(err)
 		return
@@ -74,7 +74,7 @@ func transfer(c *gin.Context) {
 	if err != nil {
 		// 失败的话就等着超时
 		c.Error(err)
-		_, _ = dmcli.RollbackGlobalTx(c.Request.Context(), &dm.RollbackGlobalTxReq{GID: gid})
+		_, _ = tmcli.RollbackGlobalTx(c.Request.Context(), &tm.RollbackGlobalTxReq{GID: gid})
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
 			Message: "trans in failed",
@@ -84,7 +84,7 @@ func transfer(c *gin.Context) {
 
 	if transInResp.Code != 0 {
 		// 失败的话就等着超时
-		_, _ = dmcli.RollbackGlobalTx(c.Request.Context(), &dm.RollbackGlobalTxReq{GID: gid})
+		_, _ = tmcli.RollbackGlobalTx(c.Request.Context(), &tm.RollbackGlobalTxReq{GID: gid})
 
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
@@ -98,7 +98,7 @@ func transfer(c *gin.Context) {
 	if err != nil {
 		// 失败的话就等着超时
 		c.Error(err)
-		_, _ = dmcli.RollbackGlobalTx(c.Request.Context(), &dm.RollbackGlobalTxReq{GID: gid})
+		_, _ = tmcli.RollbackGlobalTx(c.Request.Context(), &tm.RollbackGlobalTxReq{GID: gid})
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
 			Message: "trans out failed",
@@ -108,7 +108,7 @@ func transfer(c *gin.Context) {
 
 	if transOutResp.Code != 0 {
 		// 失败的话就等着超时
-		_, _ = dmcli.RollbackGlobalTx(c.Request.Context(), &dm.RollbackGlobalTxReq{GID: gid})
+		_, _ = tmcli.RollbackGlobalTx(c.Request.Context(), &tm.RollbackGlobalTxReq{GID: gid})
 
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
@@ -117,11 +117,11 @@ func transfer(c *gin.Context) {
 		return
 	}
 
-	commitResp, err := dmcli.CommitGlobalTx(c.Request.Context(), &dm.CommitGlobalTxReq{GID: gid})
+	commitResp, err := tmcli.CommitGlobalTx(c.Request.Context(), &tm.CommitGlobalTxReq{GID: gid})
 	if err != nil {
 		// 失败的话就等着超时
 		c.Error(err)
-		_, _ = dmcli.RollbackGlobalTx(c.Request.Context(), &dm.RollbackGlobalTxReq{GID: gid})
+		_, _ = tmcli.RollbackGlobalTx(c.Request.Context(), &tm.RollbackGlobalTxReq{GID: gid})
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
 			Message: "commit failed",
@@ -131,7 +131,7 @@ func transfer(c *gin.Context) {
 
 	if commitResp.Code != 0 {
 		// 失败的话就等着超时
-		_, _ = dmcli.RollbackGlobalTx(c.Request.Context(), &dm.RollbackGlobalTxReq{GID: gid})
+		_, _ = tmcli.RollbackGlobalTx(c.Request.Context(), &tm.RollbackGlobalTxReq{GID: gid})
 		c.JSONP(500, &GeneralResp{
 			Code:    -1,
 			Message: "commit failed",

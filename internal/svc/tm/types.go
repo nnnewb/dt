@@ -1,4 +1,4 @@
-package dm
+package tm
 
 type CreateGlobalTxReq struct {
 	GID string `json:"gid,omitempty"`

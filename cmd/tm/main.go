@@ -13,14 +13,14 @@ import (
 	"github.com/nnnewb/dt/internal/client"
 	"github.com/nnnewb/dt/internal/middleware"
 	"github.com/nnnewb/dt/internal/svc/bank"
-	"github.com/nnnewb/dt/internal/svc/dm"
+	"github.com/nnnewb/dt/internal/svc/tm"
 	"github.com/nnnewb/dt/internal/tracing/otelsql"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 )
 
 func main() {
-	tp := middleware.InitTracer("dm")
+	tp := middleware.InitTracer("tm")
 	otel.SetTracerProvider(tp)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -37,7 +37,7 @@ func main() {
 	otelsql.Register("otelmysql", &mysql.MySQLDriver{})
 
 	driver := "otelmysql"
-	dsn := "root:root@tcp(mysql:3306)/dm?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:root@tcp(mysql:3306)/tm?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := sqlx.Open(driver, dsn)
 	if err != nil {
 		log.Fatal(err)
@@ -45,7 +45,7 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.Use(middleware.Jaeger("dm"))
+	r.Use(middleware.Jaeger("tm"))
 	r.Use(middleware.WithDatabase(db))
 	r.Use(middleware.LogPayloadAndResponse)
 	r.POST("/v1alpha1/create_global_tx", createGlobalTx)
@@ -56,11 +56,11 @@ func main() {
 }
 
 func createGlobalTx(c *gin.Context) {
-	req := &dm.CreateGlobalTxReq{}
+	req := &tm.CreateGlobalTxReq{}
 	c.BindJSON(req)
 
 	db := c.MustGet("db").(*sqlx.DB)
-	_, err := db.NamedExecContext(c.Request.Context(), `INSERT INTO global_tx(gid) VALUES(:gid)`, &dm.GlobalTx{GID: req.GID})
+	_, err := db.NamedExecContext(c.Request.Context(), `INSERT INTO global_tx(gid) VALUES(:gid)`, &tm.GlobalTx{GID: req.GID})
 	if err != nil {
 		c.Error(err)
 		return
@@ -73,14 +73,14 @@ func createGlobalTx(c *gin.Context) {
 }
 
 func registerLocalTx(c *gin.Context) {
-	req := &dm.RegisterLocalTxReq{}
+	req := &tm.RegisterLocalTxReq{}
 	c.BindJSON(req)
 
 	db := c.MustGet("db").(*sqlx.DB)
 	_, err := db.NamedExecContext(
 		c.Request.Context(),
 		`INSERT INTO local_tx(gid,branch_id,callback_url) values(:gid, :branch_id, :callback_url)`,
-		&dm.LocalTx{
+		&tm.LocalTx{
 			GID:         req.GID,
 			BranchID:    req.BranchID,
 			CallbackUrl: req.CallbackUrl,
@@ -99,11 +99,11 @@ func registerLocalTx(c *gin.Context) {
 }
 
 func commitGlobalTx(c *gin.Context) {
-	req := &dm.CommitGlobalTxReq{}
+	req := &tm.CommitGlobalTxReq{}
 	c.BindJSON(req)
 
 	db := c.MustGet("db").(*sqlx.DB)
-	allLocalTx := make([]dm.LocalTx, 0)
+	allLocalTx := make([]tm.LocalTx, 0)
 	err := db.SelectContext(c.Request.Context(), &allLocalTx, "SELECT * FROM local_tx WHERE gid=?", req.GID)
 	if err != nil {
 		c.Error(err)
@@ -113,8 +113,8 @@ func commitGlobalTx(c *gin.Context) {
 	// TODO 极端情况下，回调 RM 时出现部分失败要如何处理？
 	cli := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	for _, tx := range allLocalTx {
-		callbackPayload := &bank.DMCallbackReq{Action: "commit", GID: req.GID, BranchID: tx.BranchID}
-		callbackResp := bank.DMCallbackResp{}
+		callbackPayload := &bank.TMCallbackReq{Action: "commit", GID: req.GID, BranchID: tx.BranchID}
+		callbackResp := bank.TMCallbackResp{}
 		err = client.WrappedPost(c.Request.Context(), cli, tx.CallbackUrl, callbackPayload, &callbackResp)
 		if err != nil {
 			c.Error(err)
@@ -122,7 +122,7 @@ func commitGlobalTx(c *gin.Context) {
 		}
 
 		if callbackResp.Code != 0 {
-			c.JSONP(500, &dm.CommitGlobalTxResp{
+			c.JSONP(500, &tm.CommitGlobalTxResp{
 				Code:    -1,
 				Message: fmt.Sprintf("commit local tx failed, response code %d, %s", callbackResp.Code, callbackResp.Message),
 			})
@@ -137,11 +137,11 @@ func commitGlobalTx(c *gin.Context) {
 }
 
 func rollbackGlobalTx(c *gin.Context) {
-	req := &dm.RollbackGlobalTxReq{}
+	req := &tm.RollbackGlobalTxReq{}
 	c.BindJSON(req)
 
 	db := c.MustGet("db").(*sqlx.DB)
-	allLocalTx := make([]dm.LocalTx, 0)
+	allLocalTx := make([]tm.LocalTx, 0)
 	err := db.SelectContext(c.Request.Context(), &allLocalTx, "SELECT * FROM local_tx WHERE gid=?", req.GID)
 	if err != nil {
 		c.Error(err)
@@ -151,8 +151,8 @@ func rollbackGlobalTx(c *gin.Context) {
 	// TODO 极端情况下，回调 RM 时出现部分失败要如何处理？
 	cli := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	for _, tx := range allLocalTx {
-		callbackPayload := &bank.DMCallbackReq{Action: "rollback", GID: req.GID, BranchID: tx.BranchID}
-		callbackResp := bank.DMCallbackResp{}
+		callbackPayload := &bank.TMCallbackReq{Action: "rollback", GID: req.GID, BranchID: tx.BranchID}
+		callbackResp := bank.TMCallbackResp{}
 		err = client.WrappedPost(c.Request.Context(), cli, tx.CallbackUrl, callbackPayload, &callbackResp)
 		if err != nil {
 			c.Error(err)
@@ -160,7 +160,7 @@ func rollbackGlobalTx(c *gin.Context) {
 		}
 
 		if callbackResp.Code != 0 {
-			c.JSONP(500, &dm.RollbackGlobalTxResp{
+			c.JSONP(500, &tm.RollbackGlobalTxResp{
 				Code:    -1,
 				Message: fmt.Sprintf("rollback local tx failed, response code %d, %s", callbackResp.Code, callbackResp.Message),
 			})

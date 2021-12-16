@@ -1,4 +1,4 @@
-package dm
+package tm
 
 import (
 	"encoding/hex"
@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// GenGID 生成 gid ，格式 dm-<IP>-<时间戳哈希>
+// GenGID 生成 gid ，格式 tm-<IP>-<时间戳哈希>
 func GenGID() (string, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
@@ -31,7 +31,7 @@ func GenGID() (string, error) {
 				r = append(r, byte(result))
 			}
 
-			return fmt.Sprintf("dm-gi-%s-%d", hex.EncodeToString(r), time.Now().UnixMilli()), nil
+			return fmt.Sprintf("tm-gi-%s-%d", hex.EncodeToString(r), time.Now().UnixMilli()), nil
 		}
 	}
 
@@ -67,7 +67,7 @@ func GenBranchID(branch string) (string, error) {
 				r = append(r, byte(result))
 			}
 
-			return fmt.Sprintf("dm-bi-%s-%d", hex.EncodeToString(r), time.Now().UnixMilli()), nil
+			return fmt.Sprintf("tm-bi-%s-%d", hex.EncodeToString(r), time.Now().UnixMilli()), nil
 		}
 	}
 

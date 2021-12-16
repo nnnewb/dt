@@ -36,10 +36,10 @@ services:
       - app
     volumes:
       - ./scripts/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-  dm:
+  tm:
     build:
       context: .
-      dockerfile: docker/dm.Dockerfile
+      dockerfile: docker/tm.Dockerfile
     expose:
       - 5000
     restart: always
@@ -54,7 +54,7 @@ services:
       - 5000
     restart: always
     depends_on:
-      - dm
+      - tm
       - mysql
   bank2:
     build:
@@ -65,7 +65,7 @@ services:
       - 5000
     restart: always
     depends_on:
-      - dm
+      - tm
       - mysql
   app:
     build:
@@ -75,7 +75,7 @@ services:
       - 5000
     restart: always
     depends_on:
-      - dm
+      - tm
       - bank1
       - bank2
       - mysql

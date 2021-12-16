@@ -1,4 +1,4 @@
-package dm
+package tm
 
 type GlobalTx struct {
 	GID string `json:"gid,omitempty" db:"gid"`
